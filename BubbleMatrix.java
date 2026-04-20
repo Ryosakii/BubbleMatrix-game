@@ -11,6 +11,8 @@ public class BubbleMatrix extends JPanel implements ActionListener, KeyListener 
     private int width = 800;
     private int height = 600;
     private int lives = 10, score = 0;
+    private int level = 1;
+    private int bubbleSpeed = 1;
     private boolean isGameOver = false, gameStarted = false, isLoggedIn = false;
     private String mode = "EASY";
 
@@ -63,13 +65,37 @@ public class BubbleMatrix extends JPanel implements ActionListener, KeyListener 
         loginField = new JTextField("Enter Username");
         loginField.setBounds((width - w) / 2, height / 2, w, 35);
         loginField.setHorizontalAlignment(JTextField.CENTER);
-        this.add(loginField);
+        loginField.setForeground(Color.GRAY);
+        loginField.addFocusListener(new FocusListener() {
+            @Override
+        public void focusGained(FocusEvent e) {
+            if (loginField.getText().equals("Enter Username")) {
+                loginField.setText(""); // Erase the text
+                loginField.setForeground(Color.BLACK);
+            }
+        }
+
+            @Override
+        public void focusLost(FocusEvent e) {
+            if (loginField.getText().isEmpty()) {
+                loginField.setForeground(Color.GRAY);
+                loginField.setText("Enter Username");
 
         loginButton = new JButton("LOGIN / REGISTER");
         loginButton.setBounds((width - w) / 2, height / 2 + 45, w, 40);
-        loginButton.addActionListener(e -> handleLogin());
+        loginButton.addActionListener(event -> handleLogin());
         this.add(loginButton);
-    }
+            }
+        }
+    });
+
+    this.add(loginField);
+
+    loginButton = new JButton("LOGIN / REGISTER");
+    loginButton.setBounds((width - w) / 2, height / 2 + 45, w, 40);
+    loginButton.addActionListener(event -> handleLogin());
+    this.add(loginButton);
+}
 
     private void handleLogin() {
         String name = loginField.getText().trim();
@@ -232,7 +258,7 @@ public class BubbleMatrix extends JPanel implements ActionListener, KeyListener 
 
         // Leaderboard UI
         g2.setColor(new Color(255, 215, 0));
-        drawCenteredString(g2, "--- GLOBAL RANKINGS ---", new Font("Arial", Font.BOLD, 20), null, 180);
+        drawCenteredString(g2, "--- LEADERBOARD ---", new Font("Arial", Font.BOLD, 20), null, 180);
         
         List<String> top = getLeaderboard();
         g2.setFont(new Font("Monospaced", Font.BOLD, 16));
@@ -275,9 +301,16 @@ public class BubbleMatrix extends JPanel implements ActionListener, KeyListener 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!gameStarted || isGameOver) return;
-        
-        if (random.nextInt(100) < 3) {
-            bubbles.add(new Bubble(random.nextInt(width - 100), -50, words[random.nextInt(words.length)]));
+        level = (score / 100) + 1;
+        int currentSpeed = bubbleSpeed + (level / 1);
+        int spawnChance = (level / 2) + 1;
+        if (spawnChance > 5) spawnChance = 5;
+        if (spawnCooldown > 0) {
+            spawnCooldown--;
+        if (random.nextInt(100) < spawnChance) {
+            if (bubbles.size() < 10) {
+                bubbles.add(new Bubble(random.nextInt(width - 100), -50, words[random.nextInt(words.length)], currentSpeed));
+            }
         }
 
         for (int i = bubbles.size() - 1; i >= 0; i--) {
@@ -334,8 +367,8 @@ public class BubbleMatrix extends JPanel implements ActionListener, KeyListener 
     }
 
     class Bubble {
-        int x, y, w = 90, h = 50; String word;
-        Bubble(int x, int y, String word) { this.x = x; this.y = y; this.word = word; }
+        int x, y, w = 90, h = 50; String word, speed;
+        Bubble(int x, int y, String word, int speed) { this.x = x; this.y = y; this.word = word; }
     }
 
     class MatrixRain {
